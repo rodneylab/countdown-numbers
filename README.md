@@ -6,12 +6,12 @@
   </a>
 </p>
 <h1 align="center">
-  Contdown Numbers
+  Countdown Numbers
 </h1>
 
 # countdown-numbers
 
-Numbers Terminal game built using Ratatui in Rust. This code accompanies the <a href="https://rodneylab.com/trying-ratatui-tui/">blog post on trying Rataui TUI</a>. If you have any questions, please drop a comment at the bottom of that page.
+Numbers Terminal game built using Ratatui in Rust. This code accompanies the <a href="https://rodneylab.com/trying-ratatui-tui/">blog post on trying Ratatui TUI</a>. If you have any questions, please drop a comment at the bottom of that page.
 
 ## Usage
 
