@@ -5,7 +5,8 @@ authors = ["Rodney Johnson <ask@rodneylab.com>"]
 edition = "2021"
 license = "BSD-3-Clause"
 repository = "https://github.com/rodneylab/countdown-numbers"
-rust-version = "1.60"
+# ratatui v0.26.3 requires 1.74.0 or newer
+rust-version = "1.74"
 description = "Trying Ratatui TUI 🧑🏽‍🍳 building a text-based UI number game in the Terminal 🖥️ in Rust with Ratatui immediate mode rendering."
 
 [dependencies]
