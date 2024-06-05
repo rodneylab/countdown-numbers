@@ -15,6 +15,8 @@ Numbers Terminal game built using Ratatui in Rust. This code accompanies the <a 
 
 ## Usage
 
+<img src="./images/usage.gif" alt="Terminal animation shows the user entering the following command: cargo run. Then the code compiles and the game starts, presenting playing instructions, then a screen for picking numbers.">
+
 Clone the repo then run:
 
 ```shell
