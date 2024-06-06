@@ -203,7 +203,7 @@ fn get_solution_numbers(solution: &str) -> Vec<u32> {
 mod tests {
     use super::{
         check_solution_calculation, check_solution_numbers, get_solution_numbers, App,
-        LARGE_NUMBER_COUNT,
+        LARGE_NUMBER_COUNT, SMALL_NUMBER_COUNT,
     };
 
     #[test]
@@ -239,6 +239,38 @@ mod tests {
 
         // assert
         assert!(!result);
+    }
+
+    #[test]
+    fn random_available_large_number_index_returns_none_as_expected() {
+        // arrange
+        let mut app = App::new();
+        for _ in 0..LARGE_NUMBER_COUNT {
+            let index = app.random_available_large_number_index();
+            app.available_large_numbers[index.unwrap()] = None;
+        }
+
+        // act
+        let result = app.random_available_large_number_index();
+
+        // assert
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn random_available_small_number_index_returns_none_as_expected() {
+        // arrange
+        let mut app = App::new();
+        for _ in 0..SMALL_NUMBER_COUNT {
+            let index = app.random_available_small_number_index();
+            app.available_small_numbers[index.unwrap()] = None;
+        }
+
+        // act
+        let result = app.random_available_small_number_index();
+
+        // assert
+        assert_eq!(result, None);
     }
 
     #[test]
@@ -279,6 +311,72 @@ mod tests {
 
         // assert
         assert!(result);
+    }
+
+    #[test]
+    fn check_solution_returns_none_for_empty_solution() {
+        // arrange
+        let mut app = App::new();
+        app.value_input = String::from("  ");
+
+        // act
+        let result = app.check_solution();
+
+        assert_eq!(result, None);
+
+        // arrange
+        app.value_input = String::new();
+
+        // act
+        let result = app.check_solution();
+
+        // assert
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn check_solution_returns_none_for_solution_using_non_selected_numbers() {
+        // arrange
+        let mut app = App::new();
+        app.selected_numbers = [Some(1), Some(2), Some(3), Some(4), Some(5), Some(6)];
+        app.value_input = String::from("(1 + 2 + 3 + 4 + 5 + 6) * 7");
+        app.target = 147;
+
+        // act
+        let result = app.check_solution();
+
+        // assert
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn check_solution_returns_none_for_solution_using_selected_number_too_many_times() {
+        // arrange
+        let mut app = App::new();
+        app.selected_numbers = [Some(1), Some(2), Some(3), Some(4), Some(5), Some(6)];
+        app.value_input = String::from("1 + 2 + 3 + 4 + 5 + 5");
+        app.target = 20;
+
+        // act
+        let result = app.check_solution();
+
+        // assert
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn check_solution_returns_expected_result_if_not_all_numbers_used() {
+        // arrange
+        let mut app = App::new();
+        app.selected_numbers = [Some(1), Some(2), Some(3), Some(4), Some(5), Some(6)];
+        app.value_input = String::from("1 + 2 + 3 + 4 + 5");
+        app.target = 15;
+
+        // act
+        let result = app.check_solution();
+
+        // assert
+        assert_eq!(result, Some(0));
     }
 
     #[test]
