@@ -201,7 +201,85 @@ fn get_solution_numbers(solution: &str) -> Vec<u32> {
 
 #[cfg(test)]
 mod tests {
-    use super::{check_solution_calculation, check_solution_numbers, get_solution_numbers};
+    use super::{
+        check_solution_calculation, check_solution_numbers, get_solution_numbers, App,
+        LARGE_NUMBER_COUNT,
+    };
+
+    #[test]
+    fn random_available_large_number_index_returns_only_valid_index_as_expected() {
+        // arrange
+        let mut app = App::new();
+        app.available_large_numbers[0] = None;
+        app.available_large_numbers[1] = None;
+        app.available_large_numbers[3] = None;
+
+        // act
+        let result = app.random_available_large_number_index();
+
+        // assert
+        assert_eq!(result, Some(2));
+    }
+
+    #[test]
+    fn random_available_large_number_index_returns_valid_index_as_expected() {
+        // arrange
+        let mut app = App::new();
+
+        // act
+        for _ in 0..LARGE_NUMBER_COUNT {
+            let index = app.random_available_large_number_index();
+            app.available_large_numbers[index.unwrap()] = None;
+        }
+
+        let result = app
+            .available_large_numbers
+            .iter()
+            .any(std::option::Option::is_some);
+
+        // assert
+        assert!(!result);
+    }
+
+    #[test]
+    fn is_number_selection_complete_returns_false_as_expected() {
+        // arrange
+        let mut app = App::new();
+
+        // act
+        let result = app.is_number_selection_complete();
+
+        // assert
+        assert!(!result);
+
+        // arrange
+        app.selected_numbers[0] = Some(1);
+        app.selected_numbers[1] = Some(1);
+
+        // act
+        let result = app.is_number_selection_complete();
+
+        // assert
+        assert!(!result);
+    }
+
+    #[test]
+    fn is_number_selection_complete_returns_true_as_expected() {
+        // arrange
+        let mut app = App::new();
+        app.pick_random_large_number();
+        app.pick_random_large_number();
+        app.pick_random_large_number();
+        app.pick_random_small_number();
+        app.pick_random_small_number();
+        app.pick_random_small_number();
+
+        // act
+        let result = app.is_number_selection_complete();
+
+        // assert
+        assert!(result);
+    }
 
     #[test]
     fn get_solution_parses_valid_input() {
@@ -255,7 +333,7 @@ mod tests {
     }
 
     #[test]
-    fn check_solution_parses_valid_input() {
+    fn check_solution_calculation_parses_valid_input() {
         // arrange
         let input = "(10 * 2) + 3 - 2 / 1";
 
@@ -267,7 +345,31 @@ mod tests {
     }
 
     #[test]
-    fn check_solution_parses_invalid_input() {
+    fn check_solution_calculation_returns_expected_value_for_large_calculation() {
+        // arrange
+        let input = "(10 * 2) + 3 - 2 / 1";
+
+        // act
+        let result = check_solution_calculation(input, 20);
+
+        // assert
+        assert_eq!(result, Some(1));
+    }
+
+    #[test]
+    fn check_solution_calculation_returns_expected_value_for_small_calculation() {
+        // arrange
+        let input = "(10 * 2) + 3 - 2 / 1";
+
+        // act
+        let result = check_solution_calculation(input, 22);
+
+        // assert
+        assert_eq!(result, Some(1));
+    }
+
+    #[test]
+    fn check_solution_calculation_parses_invalid_input() {
         // arrange
         let input = "(10 * 2 + 3 - 2 / 1";
 
