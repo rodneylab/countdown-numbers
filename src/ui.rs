@@ -270,3 +270,115 @@ pub fn ui(frame: &mut Frame, app: &App) {
     frame.render_widget(hint_footer, footer_chunks[0]);
     frame.render_widget(key_notes_footer, footer_chunks[1]);
 }
+
+#[cfg(test)]
+mod tests {
+
+    use super::{create_title_block, App, CurrentScreen};
+    use ratatui::{buffer::Buffer, layout::Rect, widgets::Widget};
+
+    #[test]
+    fn create_title_displays_as_exected_in_introduction_view() {
+        // arrange
+        let app = App::new();
+        let mut buf = Buffer::empty(Rect::new(0, 0, 80, 3));
+
+        let title_block = create_title_block(&app);
+
+        // act
+        title_block.render(buf.area, &mut buf);
+
+        // assert
+        let expected = Buffer::with_lines(vec![
+            "┌──────────────────────────────────────────────────────────────────────────────┐",
+            "│ Numbers Game                                                                 │",
+            "└──────────────────────────────────────────────────────────────────────────────┘",
+        ]);
+        assert_eq!(buf, expected);
+    }
+
+    #[test]
+    fn create_title_displays_as_exected_in_picking_numbers_view() {
+        // arrange
+        let mut app = App::new();
+        app.current_screen = CurrentScreen::PickingNumbers;
+        let mut buf = Buffer::empty(Rect::new(0, 0, 80, 3));
+
+        let title_block = create_title_block(&app);
+
+        // act
+        title_block.render(buf.area, &mut buf);
+
+        // assert
+        let expected = Buffer::with_lines(vec![
+            "┌──────────────────────────────────────────────────────────────────────────────┐",
+            "│ Pick some numbers                                                            │",
+            "└──────────────────────────────────────────────────────────────────────────────┘",
+        ]);
+        assert_eq!(buf, expected);
+
+        // arrange
+        let mut app = App::new();
+        app.current_screen = CurrentScreen::PickingNumbers;
+        app.pick_random_large_number();
+        app.pick_random_large_number();
+        app.pick_random_large_number();
+        app.pick_random_small_number();
+        app.pick_random_small_number();
+        app.pick_random_small_number();
+        let title_block = create_title_block(&app);
+
+        // act
+        title_block.render(buf.area, &mut buf);
+
+        // assert
+        let expected = Buffer::with_lines(vec![
+            "┌──────────────────────────────────────────────────────────────────────────────┐",
+            "│ Hit (Enter) to start the challenge                                           │",
+            "└──────────────────────────────────────────────────────────────────────────────┘",
+        ]);
+        assert_eq!(buf, expected);
+    }
+
+    #[test]
+    fn create_title_displays_as_exected_in_playing_view() {
+        // arrange
+        let mut app = App::new();
+        app.current_screen = CurrentScreen::Playing;
+        let mut buf = Buffer::empty(Rect::new(0, 0, 80, 3));
+
+        let title_block = create_title_block(&app);
+
+        // act
+        title_block.render(buf.area, &mut buf);
+
+        // assert
+        let expected = Buffer::with_lines(vec![
+            "┌──────────────────────────────────────────────────────────────────────────────┐",
+            "│ Solve the challenge                                                          │",
+            "└──────────────────────────────────────────────────────────────────────────────┘",
+        ]);
+        assert_eq!(buf, expected);
+    }
+
+    #[test]
+    fn create_title_displays_as_exected_in_result_view() {
+        // arrange
+        let mut app = App::new();
+        app.current_screen = CurrentScreen::DisplayingResult;
+        let mut buf = Buffer::empty(Rect::new(0, 0, 80, 3));
+
+        let title_block = create_title_block(&app);
+
+        // act
+        title_block.render(buf.area, &mut buf);
+
+        // assert
+        let expected = Buffer::with_lines(vec![
+            "┌──────────────────────────────────────────────────────────────────────────────┐",
+            "│ How did you do?                                                              │",
+            "└──────────────────────────────────────────────────────────────────────────────┘",
+        ]);
+        assert_eq!(buf, expected);
+    }
+}

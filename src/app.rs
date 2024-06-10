@@ -2,8 +2,11 @@ use std::collections::HashMap;
 
 use rand::{prelude::SliceRandom, rngs::ThreadRng, thread_rng, Rng};
 
+#[derive(Debug, Default)]
 pub enum CurrentScreen {
+    #[default]
     Introduction,
+
     PickingNumbers,
     Playing,
     DisplayingResult,
@@ -12,6 +15,7 @@ pub enum CurrentScreen {
 const LARGE_NUMBER_COUNT: usize = 4;
 const SMALL_NUMBER_COUNT: usize = 20;
 
+#[derive(Debug, Default)]
 pub struct App {
     pub current_screen: CurrentScreen,
     pub available_small_numbers: [Option<u32>; SMALL_NUMBER_COUNT],
