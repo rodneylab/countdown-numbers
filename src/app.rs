@@ -24,7 +24,7 @@ pub struct App {
     pub target: u32,
     pub value_input: String,
     pub feedback: String,
-    rng: ThreadRng,
+    pub rng: ThreadRng,
 }
 
 impl App {

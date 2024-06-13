@@ -1,12 +1,184 @@
+use std::f64::consts::PI;
+
+use crate::app::{App, CurrentScreen};
+
+use rand::Rng;
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
+    symbols,
     text::{Line, Span, Text},
-    widgets::{Block, Borders, Padding, Paragraph, Wrap},
+    widgets::{
+        canvas::{Canvas, Circle},
+        Block, Borders, Padding, Paragraph, Widget, Wrap,
+    },
     Frame,
 };
 
-use crate::app::{App, CurrentScreen};
+const NUM_SPARK_COLOURS: usize = 11;
+const SPARK_COLOURS: [Color; NUM_SPARK_COLOURS] = [
+    Color::Red,
+    Color::Green,
+    Color::Yellow,
+    Color::Magenta,
+    Color::Cyan,
+    Color::LightRed,
+    Color::LightGreen,
+    Color::LightYellow,
+    Color::LightBlue,
+    Color::LightMagenta,
+    Color::LightCyan,
+];
+
+#[derive(Debug)]
+struct Spark {
+    x_position: f64,
+    y_position: f64,
+    x_velocity: f64,
+    y_velocity: f64,
+    colour: Color,
+}
+
+pub struct Ui {
+    sparks: Vec<Spark>,
+    firework_tick_count: Option<u64>,
+}
+
+enum LaunchPosition {
+    Left,
+    Centre,
+    Right,
+}
+
+impl Ui {
+    pub fn new() -> Self {
+        Self {
+            sparks: Vec::new(),
+            firework_tick_count: None,
+        }
+    }
+
+    fn ignite_fireworks(&mut self, app: &mut App, position: &LaunchPosition) {
+        let x_position = match position {
+            LaunchPosition::Left => -50.0,
+            LaunchPosition::Centre => 0.0,
+            LaunchPosition::Right => 50.0,
+        };
+        let y_position = 20.0;
+        let speed = 0.3;
+
+        let mut new_sparks: Vec<Spark> = Vec::new();
+        let num_sparks = 12;
+        for index in 0..num_sparks {
+            let angle = f64::from(index) * 2.0 * PI / f64::from(num_sparks);
+            new_sparks.push(Spark {
+                x_position,
+                y_position,
+                x_velocity: angle.sin() * speed,
+                y_velocity: angle.cos() * speed,
+                colour: SPARK_COLOURS[app.rng.gen_range(0..NUM_SPARK_COLOURS)],
+            });
+        }
+        self.sparks.append(&mut new_sparks);
+    }
+
+    pub fn on_tick(&mut self, app: &mut App) {
+        if let Some(value) = self.firework_tick_count {
+            if (value % 180) == 0 && value < 3600 {
+                match (value / 180) % 3 {
+                    0 => self.ignite_fireworks(app, &LaunchPosition::Centre),
+                    1 => self.ignite_fireworks(app, &LaunchPosition::Right),
+                    2 => self.ignite_fireworks(app, &LaunchPosition::Left),
+                    _ => unreachable!("Should not be able to yield value other than 0, 1 or 2"),
+                }
+            }
+            self.firework_tick_count = Some(value + 1);
+        }
+
+        for spark in &mut self.sparks {
+            // apply acceleration due to gravity
+            spark.y_velocity -= 0.004;
+
+            spark.x_position += spark.x_velocity;
+            spark.y_position += spark.y_velocity;
+        }
+    }
+
+    pub fn ui(&mut self, frame: &mut Frame, app: &App) {
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(3),
+                Constraint::Length(5),
+                Constraint::Min(1),
+                Constraint::Length(3),
+            ])
+            .split(frame.size());
+
+        let title = create_title_block(app);
+        frame.render_widget(title, chunks[0]);
+
+        match app.current_screen {
+            CurrentScreen::PickingNumbers | CurrentScreen::Playing => {
+                let selected_numbers = create_selected_numbers_block(app);
+                frame.render_widget(selected_numbers, chunks[1]);
+            }
+            CurrentScreen::Introduction => {
+                let objective = create_objective(app);
+                frame.render_widget(objective, chunks[1]);
+            }
+            CurrentScreen::DisplayingResult => {}
+        }
+
+        match app.current_screen {
+            CurrentScreen::Introduction => {
+                let instructions = create_instructions(app);
+                frame.render_widget(instructions, chunks[2]);
+            }
+            CurrentScreen::PickingNumbers => {
+                let number_selection_chunks = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints([Constraint::Length(2), Constraint::Length(4)])
+                    .split(chunks[2]);
+                let large_number_selection = create_large_number_selection(app);
+                frame.render_widget(large_number_selection, number_selection_chunks[0]);
+
+                let small_number_list = create_small_number_selection(app);
+                frame.render_widget(small_number_list, number_selection_chunks[1]);
+            }
+            CurrentScreen::Playing => {
+                let solution_attempt = create_solution_attempt_block(app);
+                frame.render_widget(solution_attempt, chunks[2]);
+            }
+            CurrentScreen::DisplayingResult => {
+                if self.firework_tick_count.is_none() {
+                    self.firework_tick_count = Some(0);
+                }
+                let result_text = create_result_block_text(app);
+                let result_chunks = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints([Constraint::Length(1), Constraint::Min(1)])
+                    .split(chunks[2]);
+                let result_canvas = create_result_block_canvas(app, &self.sparks);
+
+                frame.render_widget(result_text, result_chunks[0]);
+                frame.render_widget(result_canvas, result_chunks[1]);
+            }
+        }
+
+        let hint_footer = create_hint_footer(app);
+
+        let key_notes_footer = create_key_notes_footer(app);
+
+        let footer_chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(chunks[3]);
+
+        frame.render_widget(hint_footer, footer_chunks[0]);
+        frame.render_widget(key_notes_footer, footer_chunks[1]);
+    }
+}
 
 fn create_title_block(app: &App) -> Paragraph {
     let title_block = Block::default()
@@ -192,7 +364,7 @@ fn create_solution_attempt_block(app: &App) -> Paragraph {
     Paragraph::new(vec![hint, Line::from(""), input_feedback])
 }
 
-fn create_result_block(app: &App) -> Paragraph {
+fn create_result_block_text(app: &App) -> Paragraph {
     let solution_text = match app.check_solution() {
         Some(value) => match value {
             0 => String::from("You nailed it 🔨. You hit the target!"),
@@ -206,69 +378,31 @@ fn create_result_block(app: &App) -> Paragraph {
     Paragraph::new(Line::from(solution_text).centered())
 }
 
-pub fn ui(frame: &mut Frame, app: &App) {
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(3),
-            Constraint::Length(5),
-            Constraint::Min(1),
-            Constraint::Length(3),
-        ])
-        .split(frame.size());
-
-    let title = create_title_block(app);
-    frame.render_widget(title, chunks[0]);
-
-    match app.current_screen {
-        CurrentScreen::PickingNumbers | CurrentScreen::Playing => {
-            let selected_numbers = create_selected_numbers_block(app);
-            frame.render_widget(selected_numbers, chunks[1]);
-        }
-        CurrentScreen::Introduction => {
-            let objective = create_objective(app);
-            frame.render_widget(objective, chunks[1]);
-        }
-        CurrentScreen::DisplayingResult => {}
+fn create_result_block_canvas<'a>(app: &'a App, sparks: &'a [Spark]) -> impl Widget + 'a {
+    match app.check_solution() {
+        Some(0) => Canvas::default()
+            .block(Block::default())
+            .marker(symbols::Marker::Dot)
+            .paint(move |ctx| {
+                for Spark {
+                    x_position,
+                    y_position,
+                    colour,
+                    ..
+                } in sparks
+                {
+                    ctx.draw(&Circle {
+                        x: *x_position,
+                        y: *y_position,
+                        radius: 1.0,
+                        color: *colour,
+                    });
+                }
+            })
+            .x_bounds([-100.0, 100.0])
+            .y_bounds([-50.0, 50.0]),
+        None | Some(_) => Canvas::default(),
     }
-
-    match app.current_screen {
-        CurrentScreen::Introduction => {
-            let instructions = create_instructions(app);
-            frame.render_widget(instructions, chunks[2]);
-        }
-        CurrentScreen::PickingNumbers => {
-            let number_selection_chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints([Constraint::Length(2), Constraint::Length(4)])
-                .split(chunks[2]);
-            let large_number_selection = create_large_number_selection(app);
-            frame.render_widget(large_number_selection, number_selection_chunks[0]);
-
-            let small_number_list = create_small_number_selection(app);
-            frame.render_widget(small_number_list, number_selection_chunks[1]);
-        }
-        CurrentScreen::Playing => {
-            let solution_attempt = create_solution_attempt_block(app);
-            frame.render_widget(solution_attempt, chunks[2]);
-        }
-        CurrentScreen::DisplayingResult => {
-            let result = create_result_block(app);
-            frame.render_widget(result, chunks[2]);
-        }
-    }
-
-    let hint_footer = create_hint_footer(app);
-
-    let key_notes_footer = create_key_notes_footer(app);
-
-    let footer_chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(chunks[3]);
-
-    frame.render_widget(hint_footer, footer_chunks[0]);
-    frame.render_widget(key_notes_footer, footer_chunks[1]);
 }
 
 #[cfg(test)]
