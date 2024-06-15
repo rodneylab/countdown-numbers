@@ -23,7 +23,7 @@ jobs:
           egress-policy: audit
           disable-telemetry: true
       - name: Install Linux Dependencies
-        run: sudo apt-get update
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev
       - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - uses: dtolnay/rust-toolchain@4f366e621dc8fa63f557ca04b8f4361824a35a45 # stable
       - name: Run tests
@@ -76,7 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - name: Install Linux Dependencies
-        run: sudo apt-get update
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev
       - name: Install ${{ matrix.msrv }}
         uses: dtolnay/rust-toolchain@4f366e621dc8fa63f557ca04b8f4361824a35a45 # stable
         with:
@@ -93,7 +93,7 @@ jobs:
           egress-policy: audit
           disable-telemetry: true
       - name: Install Linux Dependencies
-        run: sudo apt-get update
+        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev
       - name: Checkout repository
         uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - uses: dtolnay/rust-toolchain@4f366e621dc8fa63f557ca04b8f4361824a35a45 # stable
