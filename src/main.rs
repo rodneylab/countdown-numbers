@@ -4,7 +4,7 @@ mod app;
 mod ui;
 
 use std::{
-    io,
+    io::{self},
     time::{Duration, Instant},
 };
 
@@ -18,15 +18,94 @@ use ratatui::{
     backend::{Backend, CrosstermBackend},
     Terminal,
 };
-use ui::Ui;
+use rodio::{OutputStream, Sink};
+use ui::{audio::SoundEffects, Ui};
 
 use crate::app::App;
 
-fn update_feedback(app: &mut App) {
-    match app.check_solution() {
+fn play_feedback_sound_effect(
+    solution_result: Option<u32>,
+    sink: &Sink,
+    sound_effects: &SoundEffects,
+) {
+    match solution_result {
+        Some(0) => sink.append(sound_effects.perfect.clone()),
+        Some(value) => {
+            if value < 11 {
+                sink.append(sound_effects.valid.clone());
+            }
+        }
+        None => {}
+    }
+}
+
+fn update_feedback(app: &mut App) -> Option<u32> {
+    let check_solution_result = app.check_solution();
+    match check_solution_result {
         Some(0) => app.feedback = String::from(" ✅"),
         Some(value) => app.feedback = format!(" 📏 {value}"),
         None => app.feedback.clear(),
+    }
+    check_solution_result
+}
+
+fn handle_picking_numbers(
+    app: &mut App,
+    sink: Option<&Sink>,
+    sound_effects: &SoundEffects,
+    key_code: KeyCode,
+) {
+    match key_code {
+        KeyCode::Enter => {
+            if app.is_number_selection_complete() {
+                app.current_screen = CurrentScreen::Playing;
+                if let Some(value) = sink {
+                    value.append(sound_effects.start.clone());
+                }
+            }
+        }
+        KeyCode::Char(']') => {
+            app.pick_random_large_number();
+        }
+        KeyCode::Char('[') => {
+            app.pick_random_small_number();
+        }
+        _ => {}
+    }
+}
+
+fn handle_playing(
+    app: &mut App,
+    sink: Option<&Sink>,
+    sound_effects: &SoundEffects,
+    key_code: KeyCode,
+) {
+    match key_code {
+        KeyCode::Backspace => {
+            if let Some(value) = app.value_input.pop() {
+                if !value.is_ascii_whitespace() {
+                    let result_value = update_feedback(app);
+                    if let Some(value) = sink {
+                        play_feedback_sound_effect(result_value, value, sound_effects);
+                    }
+                }
+            }
+        }
+        KeyCode::Char(value) => {
+            if "01234567890()+-*/ ".contains(value) {
+                app.value_input.push(value);
+                let result_value = update_feedback(app);
+                if let Some(sink_value) = sink {
+                    if !value.is_ascii_whitespace() {
+                        play_feedback_sound_effect(result_value, sink_value, sound_effects);
+                    }
+                }
+            }
+        }
+        KeyCode::Enter => {
+            app.current_screen = CurrentScreen::DisplayingResult;
+        }
+        _ => {}
     }
 }
 
@@ -34,6 +113,29 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
     let mut last_tick = Instant::now();
     let tick_rate = Duration::from_millis(16);
     let mut app_ui = Ui::new();
+
+    // stream should not be dropped while sink is still needed
+    let (_stream, stream_handle) = match OutputStream::try_default() {
+        Ok((stream, stream_handle)) => (Some(stream), Some(stream_handle)),
+        Err(error) => {
+            eprintln!("Error creating getting default audio otuput stream: {error}");
+            (None, None)
+        }
+    };
+    let sink = if let Some(stream_handle_value) = stream_handle {
+        match Sink::try_new(&stream_handle_value) {
+            Ok(value) => Some(value),
+            Err(error) => {
+                eprintln!("Error creating sink: {error}");
+                None
+            }
+        }
+    } else {
+        None
+    };
+
+    let sound_effects = SoundEffects::default();
+
     loop {
         terminal.draw(|frame| app_ui.ui(frame, app))?;
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
@@ -53,39 +155,12 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                             app.current_screen = CurrentScreen::PickingNumbers;
                         }
                     }
-                    CurrentScreen::PickingNumbers => match key.code {
-                        KeyCode::Enter => {
-                            if app.is_number_selection_complete() {
-                                app.current_screen = CurrentScreen::Playing;
-                            }
-                        }
-                        KeyCode::Char(']') => {
-                            app.pick_random_large_number();
-                        }
-                        KeyCode::Char('[') => {
-                            app.pick_random_small_number();
-                        }
-                        _ => {}
-                    },
-                    CurrentScreen::Playing => match key.code {
-                        KeyCode::Backspace => {
-                            if let Some(value) = app.value_input.pop() {
-                                if !value.is_ascii_whitespace() {
-                                    update_feedback(app);
-                                }
-                            }
-                        }
-                        KeyCode::Char(value) => {
-                            if "01234567890()+-*/ ".contains(value) {
-                                app.value_input.push(value);
-                                update_feedback(app);
-                            }
-                        }
-                        KeyCode::Enter => {
-                            app.current_screen = CurrentScreen::DisplayingResult;
-                        }
-                        _ => {}
-                    },
+                    CurrentScreen::PickingNumbers => {
+                        handle_picking_numbers(app, sink.as_ref(), &sound_effects, key.code);
+                    }
+                    CurrentScreen::Playing => {
+                        handle_playing(app, sink.as_ref(), &sound_effects, key.code);
+                    }
                     CurrentScreen::DisplayingResult => {
                         // User requests replay
                         if key.code == KeyCode::Enter {
@@ -99,7 +174,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
         }
 
         if last_tick.elapsed() >= tick_rate {
-            app_ui.on_tick(app);
+            app_ui.on_tick(app, sink.as_ref());
             last_tick = Instant::now();
         }
     }
