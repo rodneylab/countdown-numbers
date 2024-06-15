@@ -1,7 +1,10 @@
+pub mod audio;
+
 use std::f64::consts::PI;
 
 use crate::app::{App, CurrentScreen};
 
+use audio::SoundEffects;
 use rand::Rng;
 use ratatui::{
     layout::{Constraint, Direction, Layout},
@@ -14,6 +17,7 @@ use ratatui::{
     },
     Frame,
 };
+use rodio::Sink;
 
 const NUM_SPARK_COLOURS: usize = 11;
 const SPARK_COLOURS: [Color; NUM_SPARK_COLOURS] = [
@@ -58,7 +62,7 @@ impl Ui {
         }
     }
 
-    fn ignite_fireworks(&mut self, app: &mut App, position: &LaunchPosition) {
+    fn ignite_fireworks(&mut self, app: &mut App, position: &LaunchPosition, sink: Option<&Sink>) {
         let x_position = match position {
             LaunchPosition::Left => -50.0,
             LaunchPosition::Centre => 0.0,
@@ -80,27 +84,34 @@ impl Ui {
             });
         }
         self.sparks.append(&mut new_sparks);
+
+        let sound_effects = SoundEffects::default();
+        if let Some(value) = sink {
+            value.append(sound_effects.firework.clone());
+        }
     }
 
-    pub fn on_tick(&mut self, app: &mut App) {
-        if let Some(value) = self.firework_tick_count {
-            if (value % 180) == 0 && value < 3600 {
-                match (value / 180) % 3 {
-                    0 => self.ignite_fireworks(app, &LaunchPosition::Centre),
-                    1 => self.ignite_fireworks(app, &LaunchPosition::Right),
-                    2 => self.ignite_fireworks(app, &LaunchPosition::Left),
-                    _ => unreachable!("Should not be able to yield value other than 0, 1 or 2"),
+    pub fn on_tick(&mut self, app: &mut App, sink: Option<&Sink>) {
+        if let Some(0) = app.check_solution() {
+            if let Some(value) = self.firework_tick_count {
+                if (value % 180) == 0 && value < 3600 {
+                    match (value / 180) % 3 {
+                        0 => self.ignite_fireworks(app, &LaunchPosition::Centre, sink),
+                        1 => self.ignite_fireworks(app, &LaunchPosition::Right, sink),
+                        2 => self.ignite_fireworks(app, &LaunchPosition::Left, sink),
+                        _ => unreachable!("Should not be able to yield value other than 0, 1 or 2"),
+                    }
                 }
+                self.firework_tick_count = Some(value + 1);
             }
-            self.firework_tick_count = Some(value + 1);
-        }
 
-        for spark in &mut self.sparks {
-            // apply acceleration due to gravity
-            spark.y_velocity -= 0.004;
+            for spark in &mut self.sparks {
+                // apply acceleration due to gravity
+                spark.y_velocity -= 0.004;
 
-            spark.x_position += spark.x_velocity;
-            spark.y_position += spark.y_velocity;
+                spark.x_position += spark.x_velocity;
+                spark.y_position += spark.y_velocity;
+            }
         }
     }
 

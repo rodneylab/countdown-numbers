@@ -146,11 +146,13 @@ impl App {
 
 fn check_solution_calculation(solution: &str, target: u32) -> Option<u32> {
     if let Ok(calculation_value) = num_parser::eval(solution) {
-        let calculation_value: u32 = calculation_value
-            .as_int()
-            .expect("Should be able to represent calculation result as an integer")
-            .try_into()
-            .expect("Should be able to represent calculation result as a64-bit integer");
+        let calculation_value: u32 = match calculation_value.as_int() {
+            Ok(value) => value
+                .try_into()
+                // currently largest result is 100 * 75 * 50 * 25 * 10 * 10 = 937_500_000
+                .expect("Should be able to represent calculation result as a 64-bit integer"),
+            Err(_) => return None,
+        };
         if calculation_value > target {
             return Some(calculation_value - target);
         }
@@ -444,6 +446,18 @@ mod tests {
 
         // assert
         assert_eq!(result, Some(0));
+    }
+
+    #[test]
+    fn check_solution_calculation_returns_none_for_non_integer_division_result() {
+        // arrange
+        let input = "(10 / 3) + 3 - 2 / 1";
+
+        // act
+        let result = check_solution_calculation(input, 21);
+
+        // assert
+        assert_eq!(result, None);
     }
 
     #[test]
