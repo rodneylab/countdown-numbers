@@ -223,7 +223,6 @@ dependencies = [
 name = "countdown-numbers"
 version = "0.1.0"
 dependencies = [
- "crossterm",
  "num_parser",
  "rand",
  "ratatui",
