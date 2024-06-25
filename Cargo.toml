@@ -10,7 +10,6 @@ rust-version = "1.74"
 description = "Trying Ratatui TUI 🧑🏽‍🍳 building a text-based UI number game in the Terminal 🖥️ in Rust with Ratatui immediate mode rendering."
 
 [dependencies]
-crossterm = "0.27.0"
 num_parser = "1.0.2"
 rand = "0.8.5"
 ratatui = "0.27.0"
