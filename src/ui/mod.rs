@@ -261,7 +261,7 @@ fn create_instructions(_app: &App) -> Paragraph {
     Paragraph::new(vec![
         Line::from("  — You pick 6 numbers, from 4 available large numbers and 20 small ones."),
         Line::from(
-            "  — Combine your numbers with arithemetic operations to match the random target.",
+            "  — Combine your numbers with arithmetic operations to match the random target.",
         ),
         Line::from("  — You don’t have to use all 6 numbers."),
         Line::from("  — Any division operations should result in a whole number."),
@@ -423,7 +423,7 @@ mod tests {
     use ratatui::{buffer::Buffer, layout::Rect, widgets::Widget};
 
     #[test]
-    fn create_title_displays_as_exected_in_introduction_view() {
+    fn create_title_displays_as_expected_in_introduction_view() {
         // arrange
         let app = App::new();
         let mut buf = Buffer::empty(Rect::new(0, 0, 80, 3));
@@ -443,7 +443,7 @@ mod tests {
     }
 
     #[test]
-    fn create_title_displays_as_exected_in_picking_numbers_view() {
+    fn create_title_displays_as_expected_in_picking_numbers_view() {
         // arrange
         let mut app = App::new();
         app.current_screen = CurrentScreen::PickingNumbers;
@@ -486,7 +486,7 @@ mod tests {
     }
 
     #[test]
-    fn create_title_displays_as_exected_in_playing_view() {
+    fn create_title_displays_as_expected_in_playing_view() {
         // arrange
         let mut app = App::new();
         app.current_screen = CurrentScreen::Playing;
@@ -507,7 +507,7 @@ mod tests {
     }
 
     #[test]
-    fn create_title_displays_as_exected_in_result_view() {
+    fn create_title_displays_as_expected_in_result_view() {
         // arrange
         let mut app = App::new();
         app.current_screen = CurrentScreen::DisplayingResult;
