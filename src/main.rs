@@ -118,7 +118,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
     let (_stream, stream_handle) = match OutputStream::try_default() {
         Ok((stream, stream_handle)) => (Some(stream), Some(stream_handle)),
         Err(error) => {
-            eprintln!("Error creating getting default audio otuput stream: {error}");
+            eprintln!("Error creating getting default audio output stream: {error}");
             (None, None)
         }
     };
