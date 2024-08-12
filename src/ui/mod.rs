@@ -124,7 +124,7 @@ impl Ui {
                 Constraint::Min(1),
                 Constraint::Length(3),
             ])
-            .split(frame.size());
+            .split(frame.area());
 
         let title = create_title_block(app);
         frame.render_widget(title, chunks[0]);
