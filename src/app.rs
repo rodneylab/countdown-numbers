@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use rand::{prelude::SliceRandom, rngs::ThreadRng, thread_rng, Rng};
+use rand::{prelude::SliceRandom, rng, rngs::ThreadRng, Rng};
 
 #[derive(Debug, Default)]
 pub enum CurrentScreen {
@@ -29,7 +29,7 @@ pub struct App {
 
 impl App {
     pub fn new() -> App {
-        let mut rng = thread_rng();
+        let mut rng = rng();
 
         // generate random large numbers
         let mut available_large_numbers = [25, 50, 75, 100];
@@ -47,7 +47,7 @@ impl App {
             available_small_numbers,
             available_large_numbers,
             selected_numbers: [None; 6],
-            target: rng.gen_range(100..1_000),
+            target: rng.random_range(100..1_000),
             rng,
             value_input: String::new(),
             feedback: String::new(),
@@ -64,7 +64,7 @@ impl App {
         }
 
         loop {
-            let index = self.rng.gen_range(0..LARGE_NUMBER_COUNT);
+            let index = self.rng.random_range(0..LARGE_NUMBER_COUNT);
 
             if self.available_large_numbers[index].is_some() {
                 return Some(index);
@@ -89,7 +89,7 @@ impl App {
         }
 
         loop {
-            let index = self.rng.gen_range(0..SMALL_NUMBER_COUNT);
+            let index = self.rng.random_range(0..SMALL_NUMBER_COUNT);
 
             if self.available_small_numbers[index].is_some() {
                 return Some(index);

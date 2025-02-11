@@ -80,7 +80,7 @@ impl Ui {
                 y_position,
                 x_velocity: angle.sin() * speed,
                 y_velocity: angle.cos() * speed,
-                colour: SPARK_COLOURS[app.rng.gen_range(0..NUM_SPARK_COLOURS)],
+                colour: SPARK_COLOURS[app.rng.random_range(0..NUM_SPARK_COLOURS)],
             });
         }
         self.sparks.append(&mut new_sparks);

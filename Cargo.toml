@@ -11,6 +11,6 @@ description = "Trying Ratatui TUI 🧑🏽‍🍳 building a text-based UI numbe
 
 [dependencies]
 num_parser = "1.0.2"
-rand = "0.8.5"
-ratatui = "0.28.1"
-rodio = { version = "0.19.0", default-features = false, features = ["symphonia-mp3"] }
+rand = "0.9.0"
+ratatui = "0.29.0"
+rodio = { version = "0.20.1", default-features = false, features = ["symphonia-mp3"] }
